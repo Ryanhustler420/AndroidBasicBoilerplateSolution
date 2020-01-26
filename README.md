@@ -318,3 +318,168 @@ public class MainActivity extends AppCompatActivity {
 </com.google.android.material.appbar.AppBarLayout>
 
 ```
+
+## Pinch To Zoom Image
+
+[library](https://github.com/stfalcon-studio/FrescoImageViewer)
+
+
+> root/build.gradle
+
+```gradle
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:design:28.0.0'
+    implementation 'com.android.support:cardview-v7:28.0.0'
+    implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'com.squareup.picasso:picasso:2.71828'
+
+    // Image Zooming
+    implementation 'com.github.stfalcon:frescoimageviewer:0.5.0'
+    implementation 'com.facebook.fresco:fresco:1.9.0'
+    
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation "com.android.support:support-core-utils:28.0.0"
+
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation 'com.google.android.material:material:1.0.0'
+}
+
+```
+
+> activity_main.xml
+
+```XML
+
+<Button
+    android:id="@+id/load_img_button"
+    android:layout_width="200dp"
+    android:layout_height="100dp"
+    android:layout_gravity="center_horizontal"
+    android:text="Load Image" />
+
+```
+
+> controller/AndroidManifest.xml
+
+```XML
+
+<uses-permission android:name="android.permission.INTERNET" />
+
+<application android:name=".controller.AppController"> </application>
+
+```
+
+> MainActivity.java
+
+```java
+
+package io.raisehand.raisehandrepositoryenv;
+
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
+
+import android.content.res.Configuration;
+import android.os.Bundle;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.stfalcon.frescoimageviewer.ImageViewer;
+
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        /*
+         new ImageViewer.Builder<>(this, images)
+        .setStartPosition(startPosition)
+        .hideStatusBar(false)
+        .allowZooming(true)
+        .allowSwipeToDismiss(true)
+        .setBackgroundColorRes(colorRes)
+        //.setBackgroundColor(color)
+        .setImageMargin(margin)
+        //.setImageMarginPx(marginPx)
+        .setContainerPadding(this, dimen)
+        //.setContainerPadding(this, dimenStart, dimenTop, dimenEnd, dimenBottom)
+        //.setContainerPaddingPx(padding)
+        //.setContainerPaddingPx(start, top, end, bottom)
+        .setCustomImageRequestBuilder(imageRequestBuilder)
+        .setCustomDraweeHierarchyBuilder(draweeHierarchyBuilder)
+        .setImageChangeListener(imageChangeListener)
+        .setOnDismissListener(onDismissListener)
+        .setOverlayView(overlayView)
+        .show();
+        * */
+
+        Button load_img_button = findViewById(R.id.load_img_button);
+
+        ArrayList<String> imagesUrl = new ArrayList<>();
+        imagesUrl.add("https://avatars2.githubusercontent.com/u/25275856?s=460&v=4");
+
+        load_img_button.setOnClickListener(v ->
+                new ImageViewer.Builder<>(this, imagesUrl)
+                        .setStartPosition(0)
+                        .show());
+
+    }
+
+}
+
+
+```
+
+> controller/AppController.java
+
+```java
+
+import android.app.Application;
+
+import com.facebook.drawee.backends.pipeline.Fresco;
+import com.facebook.imagepipeline.core.ImagePipelineConfig;
+import com.facebook.imagepipeline.decoder.SimpleProgressiveJpegConfig;
+
+public class AppController extends Application {
+
+    private static AppController instance;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        instance = this;
+
+        // if you expect to open really large images, use configuration below for better performance
+        ImagePipelineConfig config = ImagePipelineConfig.newBuilder(this)
+                .setProgressiveJpegConfig(new SimpleProgressiveJpegConfig())
+                .setResizeAndRotateEnabledForNetwork(true)
+                .setDownsampleEnabled(true)
+                .build();
+
+        // initialize Fresco in your Application class
+        Fresco.initialize(this, config);
+    }
+
+    public static AppController getInstance() {
+        return instance;
+    }
+}
+
+
+```
