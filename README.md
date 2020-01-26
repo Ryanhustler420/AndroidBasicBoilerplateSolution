@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
             };
 
             mDrawerToggle.setDrawerIndicatorEnabled(true);
-            mDrawer.setDrawerListener(mDrawerToggle);
+            mDrawer.addDrawerListener(mDrawerToggle);
             mDrawerToggle.syncState();
 
         }
