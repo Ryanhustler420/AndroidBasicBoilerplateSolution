@@ -495,7 +495,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "io.raisehand.raisehandrepositoryenv"
+        applicationId "io.example.appname"
         minSdkVersion 24
         targetSdkVersion 28
         versionCode 1
