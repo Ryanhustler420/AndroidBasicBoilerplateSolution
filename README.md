@@ -483,3 +483,98 @@ public class AppController extends Application {
 
 
 ```
+
+## Implementing Log Manager Using Splunk Mint
+
+> build.gradle
+
+```gradle
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "io.raisehand.raisehandrepositoryenv"
+        minSdkVersion 24
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        multiDexEnabled true
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+    allprojects {
+        repositories {
+            maven { url "https://jitpack.io" }
+        }
+    }
+}
+
+repositories {
+    maven {
+        url uri('mint-plugin-repo-5.2.5')
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    
+    // error testing library
+    implementation 'com.splunk:mint-android-sdk:5.2.5' 
+
+
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:design:28.0.0'
+    implementation 'com.android.support:cardview-v7:28.0.0'
+    implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.1.3'
+
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation 'com.google.android.material:material:1.0.0'
+}
+
+
+```
+
+> Paste The  **mint-plugin-repo-5.2.5.jar** file to app level not inside **libs**. using Project view instead of android view in side inspecter
+
+> MainActivity.java
+
+```java
+
+    import com.splunk.mint.Mint;
+
+    // https://docs.splunk.com/Documentation/MintAndroidSDK/latest/DevGuide/Requirementsandinstallation
+    new Thread() {
+        @Override
+        public void run() {
+            super.run();
+            // Set the application environment
+            Mint.setApplicationEnvironment(Mint.appEnvironmentStaging);
+            Mint.initAndStartSession(getApplication(), "API Key");
+        }
+    }.start();
+
+```
+
+## Light Status Bar
+
+```java
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+    }
+
+```
