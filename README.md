@@ -578,3 +578,103 @@ dependencies {
     }
 
 ```
+
+## Custome Toast
+
+> toast.xml
+
+```xml
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/toast_layout_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/padding_small_8dp">
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/base_card"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:cardBackgroundColor="@color/colorAccent"
+        app:cardCornerRadius="@dimen/card_cornerRadius_25dp"
+        app:cardElevation="@dimen/card_elevation_15dp"
+        app:cardUseCompatPadding="true">
+
+        <TextView
+            android:id="@+id/text"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:fontFamily="sans-serif-medium"
+            android:padding="@dimen/padding_medium_16dp"
+            android:text="@string/app_name"
+            android:textColor="@color/colorPrimary" />
+
+    </androidx.cardview.widget.CardView>
+
+</LinearLayout>
+
+```
+
+> MainActivity.java
+
+```java
+
+public class MainActivity extends AppCompatActivity {
+
+    LayoutInflater inflater;
+    View toastLayout;
+    TextView toastText;
+    Toast toast;
+    
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+            
+            initToastLayout();
+            
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    showToast("Stay Positive", 1);    
+                }
+             }, 2000);
+            
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    showToastWithColor("Stay Cool", 1, R.color.green);
+                }
+             }, 4000);
+        }
+    }
+    
+    // Don't use this function at all. this is to initialize the toast layout and inflate for you to use. 
+    private void initToastLayout() {
+        inflater = getLayoutInflater();
+        toastLayout = inflater.inflate(R.layout.toast, findViewById(R.id.toast_layout_root));
+        toastText = toastLayout.findViewById(R.id.text);
+        toast = new Toast(getApplicationContext());
+        toast.setGravity(Gravity.BOTTOM, 0, 0);
+        toast.setView(toastLayout);
+    }
+
+    // call this when  you want to show custom toast message., well we can change the color of background. but later. we will implement this.
+    protected void showToast(String message, int duration) {
+        toastText.setText(message);
+        toast.setDuration(duration > 0 ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
+    protected void showToastWithColor(String message, int duration, int colorInRes) {
+        CardView cardView = toastLayout.findViewById(R.id.base_card);
+        cardView.setCardBackgroundColor(ContextCompat.getColor(getApplicationContext(), colorInRes));
+        toastText.setText(message);
+        toast.setDuration(duration > 0 ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT);
+        toast.show();
+    }
+
+}
+
+```
+
