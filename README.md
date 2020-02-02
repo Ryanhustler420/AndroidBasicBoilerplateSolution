@@ -678,19 +678,19 @@ public class MainActivity extends AppCompatActivity {
 
 ```
 
-## Use Custome Font
+## Use Custom Font
 
 > Make A Directory In Project View. **src > main > assets > fonts** paste your .ttf files
 
 ```java
 
-        AssetManager am = getApplicationContext().getAssets();
+    AssetManager am = getApplicationContext().getAssets();
 
-        Typeface typeface = Typeface.createFromAsset(am, String.format(Locale.US, "fonts/%s", "ProductSans-Light.ttf"));
-        TextView flavour = findViewById(R.id.flavour);
-        TextView indexFigure = findViewById(R.id.indexFigure);
+    Typeface typeface = Typeface.createFromAsset(am, String.format(Locale.US, "fonts/%s", "ProductSans-Light.ttf"));
+    TextView flavour = findViewById(R.id.flavour);
+    TextView indexFigure = findViewById(R.id.indexFigure);
 
-        flavour.setTypeface(typeface);
-        indexFigure.setTypeface(typeface);
+    flavour.setTypeface(typeface);
+    indexFigure.setTypeface(typeface);
 
 ```
