@@ -694,3 +694,5 @@ public class MainActivity extends AppCompatActivity {
     indexFigure.setTypeface(typeface);
 
 ```
+
+> For [entire application](https://www.coderefer.com/android-custom-font-entire-application/)
