@@ -696,3 +696,436 @@ public class MainActivity extends AppCompatActivity {
 ```
 
 > For [entire application](https://www.coderefer.com/android-custom-font-entire-application/)
+
+## Algolia Endless RecyclerView Implementation
+
+
+```javaScript
+
+/*********************************/
+/* This is the structure of POJO */
+/*********************************/
+
+{
+  "userId": 1,
+  "id": 2,
+  "title": "quis ut nam facilis et officia qui",
+  "completed": false,
+  "objectID": "23725092"
+}
+
+```
+
+
+> AlgoliaTest.java
+
+```java
+
+
+import android.content.Context;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.algolia.search.saas.Client;
+import com.algolia.search.saas.CompletionHandler;
+import com.algolia.search.saas.Index;
+import com.algolia.search.saas.Query;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class AlgoliaTest extends CommonAttributesActivity {
+
+    ProgressBar mProgressBar;
+    RecyclerView my_recycler_view;
+    TodoAdapter todoAdapter;
+    EndlessRecyclerOnScrollListener endlessRecyclerOnScrollListener;
+
+    // Algolia Test Suit Section.
+    Client client = new Client("YOUR_APP_ID", "YOUR_API_KEY");
+    Index index = client.getIndex("testing"); // using testing index for testing purpose.
+    Query query;
+
+    // Meta Data Tracker Variables.
+    AtomicInteger currentPage = new AtomicInteger();
+    AtomicInteger totalPages = new AtomicInteger();
+    int hitsPerPage = 20;
+    int nextChunkLoadingThreshold = 4;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_algolia_test);
+
+        mProgressBar = findViewById(R.id.loading_progressbar);
+
+        // Resetting Data's
+        currentPage.set(0);
+        totalPages.set(0);
+
+        // Init the Todo: Adapter and recyclerView.
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getApplicationContext());
+        todoAdapter = new TodoAdapter(getApplicationContext());
+
+        my_recycler_view = findViewById(R.id.my_recycler_view);
+        my_recycler_view.setLayoutManager(linearLayoutManager);
+        my_recycler_view.setAdapter(todoAdapter);
+        my_recycler_view.addOnScrollListener(setUpEndlessRecyclerView(linearLayoutManager));
+        endlessRecyclerOnScrollListener.setVisibleThreshold(nextChunkLoadingThreshold);
+
+        // Set The Query
+        // Set if Any Query Available. Or Put That In Separate Method would be nice.
+        // Loading All Data Using "" Empty String
+        query = new Query("").setHitsPerPage(hitsPerPage);
+
+        // Get The Data First Time.
+        io();
+    }
+
+    public void io() {
+        query.setPage(currentPage.get());
+        index.searchAsync(query, handler);
+    }
+
+    public CompletionHandler handler = (jsonObject, e) -> {
+        try {
+            assert jsonObject != null;
+
+            // Set TotalPages
+            totalPages.set(jsonObject.getInt("nbPages"));
+
+            // Check If THe Data is not right or has no "hits".length() == 0 then return;
+            JSONArray jsonArray = jsonObject.getJSONArray("hits");
+
+            if (jsonArray != null && jsonArray.length() <= 0) {
+                mProgressBar.setVisibility(View.GONE);
+                waitIAmDoingSomething = false;
+                if (todoAdapter.getItemCount() > 0) {
+                    showToast("That\'s All", 1); // this is just custome toast message cover with API.
+                } else {
+                    showToast("Shoot: No Match Found", 1);
+                }
+                return;
+            }
+
+            // While In This Section, We'll Fet the data and put inside recyclerView.
+            // Create An ArrayList To Store The Received Data using Loop.
+            ArrayList<Todo> todos = new ArrayList<>();
+
+            if (jsonArray != null) {
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject data = jsonArray.getJSONObject(i);
+                    todos.add(new Todo(data.getInt("userId"), data.getInt("id"), data.getString("title"), data.getBoolean("completed")));
+                }
+            }
+
+            // Put Inside RecyclerView And Set Mandatory Data's
+            todoAdapter.addTodos(todos);
+            mProgressBar.setVisibility(View.GONE);
+
+        } catch (JSONException ex) {
+            ex.printStackTrace();
+        }
+    };
+
+    private EndlessRecyclerOnScrollListener setUpEndlessRecyclerView(LinearLayoutManager linearLayoutManager) {
+        endlessRecyclerOnScrollListener = new EndlessRecyclerOnScrollListener(linearLayoutManager) {
+            @Override
+            public void onLoadMore(int current_page) {
+                // Load More From Here.
+                if (current_page <= totalPages.get()) {
+                    mProgressBar.setVisibility(View.VISIBLE);
+                    currentPage.set(current_page);
+                    io();
+                }
+            }
+        };
+        endlessRecyclerOnScrollListener.setVisibleThreshold(hitsPerPage);
+        return endlessRecyclerOnScrollListener;
+    }
+
+    // POJO Class
+
+    class Todo {
+        private int userId;
+        private int id;
+        private String title;
+        private boolean completed;
+
+        Todo(int userId, int id, String title, boolean completed) {
+            this.userId = userId;
+            this.id = id;
+            this.title = title;
+            this.completed = completed;
+        }
+
+        public int getUserId() {
+            return userId;
+        }
+
+        public void setUserId(int userId) {
+            this.userId = userId;
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public String getTitle() {
+            return title;
+        }
+
+        public void setTitle(String title) {
+            this.title = title;
+        }
+
+        public boolean isCompleted() {
+            return completed;
+        }
+
+        public void setCompleted(boolean completed) {
+            this.completed = completed;
+        }
+    }
+
+    class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.ViewHolder> {
+
+        private Context context;
+        private ArrayList<Todo> todos;
+
+        TodoAdapter(Context context) {
+            this.context = context;
+            this.todos = new ArrayList<>();
+        }
+
+        public void addTodo(Todo todo) {
+            this.todos.add(todo);
+            notifyDataSetChanged();
+        }
+
+        public void addTodos(ArrayList<Todo> todo) {
+            this.todos.addAll(todo);
+            notifyDataSetChanged();
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(context).inflate(R.layout.todo_single_card, null);
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            Todo todo = todos.get(position);
+            holder.todo_title.setText(String.format("Title: %s", todo.getTitle()));
+            holder.todo_id.setText(String.format("ID: %s", todo.getId()));
+            holder.todo_completed.setText(String.format("Completed: %s", todo.isCompleted() ? "YES" : "NO"));
+        }
+
+        @Override
+        public int getItemCount() {
+            return todos.size();
+        }
+
+        public class ViewHolder extends RecyclerView.ViewHolder {
+
+            TextView
+                    todo_title,
+                    todo_id,
+                    todo_completed;
+
+            ViewHolder(@NonNull View itemView) {
+                super(itemView);
+                todo_title = itemView.findViewById(R.id.todo_title);
+                todo_id = itemView.findViewById(R.id.todo_id);
+                todo_completed = itemView.findViewById(R.id.todo_completed);
+            }
+        }
+    }
+
+}
+
+
+```
+
+> EndlessRecyclerOnScrollListener.java
+
+**Src: ** [Medium](https://medium.com/@sidhanth/android-pagination-for-algolia-recyclerviews-searches-8d7b16d9cee2)
+
+```java
+
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+public abstract class EndlessRecyclerOnScrollListener extends RecyclerView.OnScrollListener {
+
+    public static String TAG = EndlessRecyclerOnScrollListener.class.getSimpleName();
+
+    private int previousTotal = 0; // The total number of items in the dataset after the last load
+    private boolean loading = true; // True if we are still waiting for the last set of data to load.
+    private int visibleThreshold = 0; // The minimum amount of items to have below your current scroll position before loading more.
+    private int firstVisibleItem, visibleItemCount, totalItemCount;
+
+    private int current_page = 0;
+    private int total_pages = 0;
+
+    private LinearLayoutManager mLinearLayoutManager;
+
+    EndlessRecyclerOnScrollListener(LinearLayoutManager linearLayoutManager) {
+        this.mLinearLayoutManager = linearLayoutManager;
+    }
+
+    void setVisibleThreshold(int threshold) {
+        this.visibleThreshold = threshold;
+    }
+
+    void setCurrent_page(int current_page) {
+        this.current_page = Math.max(current_page, 0);
+    }
+
+    void setTotal_Pages(int total_pages) {
+        this.total_pages = Math.max(total_pages, 0);
+    }
+
+    public void reset(int previousTotal, boolean loading) {
+        this.previousTotal = previousTotal;
+        this.loading = loading;
+    }
+
+    @Override
+    public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+        super.onScrolled(recyclerView, dx, dy);
+
+        visibleItemCount = recyclerView.getChildCount();
+        totalItemCount = mLinearLayoutManager.getItemCount();
+        firstVisibleItem = mLinearLayoutManager.findFirstVisibleItemPosition();
+
+        if (loading) {
+            if (totalItemCount > previousTotal) {
+                loading = false;
+                previousTotal = totalItemCount;
+            }
+        }
+
+        if (!loading && (totalItemCount - visibleItemCount)
+                <= (firstVisibleItem + visibleThreshold)) {
+            // End has been reached
+
+            // Do something
+            current_page++;
+
+            onLoadMore(current_page);
+
+            loading = true;
+        }
+
+    }
+
+    public abstract void onLoadMore(int current_page);
+}
+
+```
+
+> activity_algolia_test.xml
+
+```xml
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".AlgoliaTest">
+    
+    <com.google.android.material.appbar.AppBarLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:elevation="@dimen/card_elevation_no">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:minHeight="?attr/actionBarSize"
+            android:theme="@style/AppToolbar" />
+
+        <ProgressBar
+            android:id="@+id/loading_progressbar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-7dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/colorAccent"
+            android:max="100"
+            android:visibility="gone" />
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/my_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scrollbars="vertical" />
+
+</LinearLayout>
+
+```
+
+> todo_single_card.xml
+
+```xml
+
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/todo_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/colorAccent"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/todo_id"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/todo_completed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+</LinearLayout>
+
+```
