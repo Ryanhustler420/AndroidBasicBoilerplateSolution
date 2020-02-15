@@ -1129,3 +1129,51 @@ public abstract class EndlessRecyclerOnScrollListener extends RecyclerView.OnScr
 </LinearLayout>
 
 ```
+
+## Firebase Multiple Incertion and Update
+
+```java
+
+    private class System32 {
+        private String name;
+        private String path;
+
+        public System32() {
+        }
+
+        public System32(String name, String path) {
+            this.name = name;
+            this.path = path;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
+
+    public FirebaseDatabase db;
+
+    db = FirebaseDatabase.getInstance();
+    
+    Map<String, Object> path_value = new HashMap<>();
+    System32 system32 = new System32("virus", "c://users/timeMachine/.AS32");
+    path_value.put("temp/system32", system32);
+    path_value.put("temp/system64", system32);
+    db.getReference().updateChildren(path_value);
+    
+    
+    
+
+```
