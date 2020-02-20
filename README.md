@@ -1173,7 +1173,48 @@ public abstract class EndlessRecyclerOnScrollListener extends RecyclerView.OnScr
     path_value.put("temp/system64", system32);
     db.getReference().updateChildren(path_value);
     
-    
-    
+```
+
+## Debounce Functionality
+
+```java
+
+import android.os.Handler;
+import android.view.View;
+
+public class DebounceFunctionality implements View.OnClickListener {
+    private IAfterDelay iAfterDelay;
+    private long last_time_button_click = 0;
+    private Handler handler;
+    private long delay;
+
+    public DebounceFunctionality(long delay, IAfterDelay iAfterDelay) {
+        this.handler = new Handler();
+        this.delay = delay;
+        this.iAfterDelay = iAfterDelay;
+    }
+
+    @Override
+    public void onClick(View view) {
+        iAfterDelay.loading(true);
+        handler.removeCallbacks(execute);
+        last_time_button_click = System.currentTimeMillis();
+        handler.postDelayed(execute, delay);
+    }
+
+    public interface IAfterDelay {
+        void fire();
+        void loading(boolean state);
+    }
+
+    private Runnable execute = () -> {
+        if (System.currentTimeMillis() > (last_time_button_click + delay - 500)) {
+            if (iAfterDelay != null) {
+                iAfterDelay.loading(false);
+                iAfterDelay.fire();
+            }
+        }
+    };
+}
 
 ```
