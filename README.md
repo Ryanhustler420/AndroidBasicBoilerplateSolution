@@ -1503,3 +1503,21 @@ public boolean onCreateOptionsMenu(Menu menu) {
 }
 
 ```
+> Listener on menu items when clicked
+
+```java
+@Override
+public boolean onOptionsItemSelected(MenuItem item) {
+    // Handle item selection
+    switch (item.getItemId()) {
+        case R.id.action_add:
+            addSomething();
+            return true;
+        case R.id.action_settings:
+            startSettings();
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+    }
+}
+```
