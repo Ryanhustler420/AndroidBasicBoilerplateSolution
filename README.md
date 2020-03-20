@@ -104,6 +104,9 @@ public class MainActivity extends AppCompatActivity {
             mDrawerToggle.syncState();
 
         }
+        
+        
+        setNavigationViewListener();
 
     }
 
@@ -125,6 +128,26 @@ public class MainActivity extends AppCompatActivity {
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         mDrawerToggle.onConfigurationChanged(newConfig);
+    }
+    
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+        if (!isAboutToMoveAnotherActivity) {
+            switch (menuItem.getItemId()) {
+                case R.id.company_repo:
+                    showToast("company Repo");
+                    break;
+                case R.id.library:
+                    showToast("library activity");
+                    break;
+            }
+        }
+        return true;
+    }
+    
+    public void setNavigationViewListener() {
+        NavigationView navigationView = findViewById(R.id.home_drawer_navView);
+        navigationView.setNavigationItemSelectedListener(this);
     }
 
 }
