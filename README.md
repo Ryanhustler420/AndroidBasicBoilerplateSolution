@@ -109,6 +109,16 @@ public class MainActivity extends AppCompatActivity {
         setNavigationViewListener();
 
     }
+    
+        @Override
+        public void onBackPressed() {
+            if (mDrawer.isDrawerOpen(GravityCompat.START)) {
+                mDrawer.closeDrawer(GravityCompat.START);
+                return;
+            }
+        
+        }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
