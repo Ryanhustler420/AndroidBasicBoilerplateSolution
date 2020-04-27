@@ -1697,3 +1697,120 @@ public class MainActivity extends AppCompatActivity {
 }
 
 ```
+
+## Internet Checker [Library](https://github.com/novoda/merlin)
+
+> InternetConnectionChecker.java
+
+```java
+
+package io.example.app.network;
+
+import android.content.Context;
+import android.widget.Toast;
+
+import com.novoda.merlin.Connectable;
+import com.novoda.merlin.Disconnectable;
+import com.novoda.merlin.Endpoint;
+import com.novoda.merlin.Merlin;
+import com.novoda.merlin.ResponseCodeValidator;
+
+@SuppressWarnings("unused")
+public class InternetConnectionChecker {
+    private Context context;
+    private Merlin merlin;
+    private String endPoint = "https://www.google.com";
+    private boolean isConnected;
+
+    public InternetConnectionChecker(Context context) {
+        this.context = context;
+        this.merlin = new Merlin.Builder().withConnectableCallbacks().withDisconnectableCallbacks().build(context);
+        this.isConnected = false;
+    }
+
+    public void startCheckingInternetConnection() {
+        if (merlin != null) {
+            merlin.bind();
+            runInternetStateChecker();
+        }
+    }
+
+    public void stopCheckingInternetConnection() {
+        if (merlin != null) merlin.unbind();
+    }
+
+    private void runInternetStateChecker() {
+        if (merlin != null) {
+            merlin.registerConnectable(connected);
+            merlin.registerDisconnectable(disconnected);
+        }
+    }
+
+    private Connectable connected = () -> {
+        // we are connected
+        isConnected = true;
+        Toast.makeText(context, "You are Connected", Toast.LENGTH_LONG).show();
+    };
+
+    private Disconnectable disconnected = () -> {
+        // we are disconnected
+        isConnected = false;
+        Toast.makeText(context, "Ah! you are Disconnected", Toast.LENGTH_LONG).show();
+    };
+
+    public boolean isEndPointValid() {
+        ResponseCodeValidator validator = responseCode -> responseCode == 200;
+        merlin.setEndpoint(Endpoint.from(endPoint), validator);
+        return validator.isResponseCodeValid(200);
+    }
+
+    public String getEndPoint() {
+        return endPoint;
+    }
+
+    public void setEndPoint(String endPoint) {
+        this.endPoint = endPoint;
+    }
+
+    public boolean isConnected() {
+        return isConnected;
+    }
+}
+
+```
+> MainActivity.java
+
+```java
+
+public class MainActivity extends AppCompatActivity {
+
+    InternetConnectionChecker internetConnectionChecker;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        internetConnectionChecker = new InternetConnectionChecker(getApplicationContext());
+
+        // we can check
+        internetConnectionChecker.isConnected();
+
+    }
+    
+    
+    @Override
+    protected void onPause() {
+        if (internetConnectionChecker != null)
+            internetConnectionChecker.stopCheckingInternetConnection();
+        super.onPause();
+    }
+    
+    @Override
+    protected void onResume() {
+        if (internetConnectionChecker != null)
+            internetConnectionChecker.startCheckingInternetConnection(); // will bind the merlin, because of anroid lifecycle
+        super.onResume();
+    }
+   
+}
+```
