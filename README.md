@@ -1554,3 +1554,146 @@ public boolean onOptionsItemSelected(MenuItem item) {
     }
 }
 ```
+## Location (Coordinates) [From This Library](https://github.com/delight-im/Android-SimpleLocation)
+
+> MyLocation.java
+
+```java
+
+package io.raisehand.raisehandrepositoryenv.network;
+
+import android.content.Context;
+import android.os.Handler;
+
+import im.delight.android.location.SimpleLocation;
+import io.raisehand.raisehandrepositoryenv.model.Coordinates;
+
+@SuppressWarnings("unused")
+public class MyLocation {
+    private Context context;
+    private boolean locationReady, updatePaused;
+    private SimpleLocation simpleLocation;
+    private Coordinates coordinates;
+    private boolean requireFineGranularity;
+    private boolean passiveMode;
+    private long updateIntervalInMilliseconds; // this should be less than 'autoUpdateStopAfterMilliseconds' variable...
+    private long autoUpdateStopAfterMilliseconds = 5000; // 5 Seconds by Default
+    private int timesRefresh = 0;
+
+    public MyLocation(Context context, boolean requireFineGranularity, boolean passiveMode, long updateIntervalInMilliseconds, boolean requireNewLocation) {
+        this.context = context;
+        this.requireFineGranularity = requireFineGranularity;
+        this.passiveMode = passiveMode;
+        this.updateIntervalInMilliseconds = updateIntervalInMilliseconds;
+        this.simpleLocation = new SimpleLocation(context, requireFineGranularity, passiveMode, updateIntervalInMilliseconds, requireNewLocation);
+        this.coordinates = new Coordinates(0, 0);
+        this.locationReady = false; // not mandatory but still setting reset value flag.
+    }
+
+    public void startLocationUpdate(boolean wantToStopUpdateAutomatically) {
+        if (!canDeviceAccessLocation()) {
+            SimpleLocation.openSettings(context);
+        } else {
+            resumeLocationUpdate();
+            simpleLocation.setListener(() -> {
+                setCoordinates(new Coordinates(simpleLocation.getLatitude(), simpleLocation.getLongitude()));
+                locationReady = true;
+                timesRefresh++;
+            });
+            if (wantToStopUpdateAutomatically)
+                new Handler().postDelayed(this::pauseLocationUpdate, autoUpdateStopAfterMilliseconds);
+        }
+    }
+
+    // make the device update its location
+    private void resumeLocationUpdate() {
+        if (simpleLocation != null) {
+            updatePaused = false;
+            simpleLocation.beginUpdates();
+        }
+    }
+
+    // stop location updates (saves battery)
+    private void pauseLocationUpdate() {
+        if (simpleLocation != null) {
+            updatePaused = true;
+            simpleLocation.endUpdates();
+        }
+    }
+
+    // call this method after constructor call or before getCurrentLocationCoordinates() call
+    public void setAutoUpdateStopAfterMilliseconds(long autoUpdateStopAfterMilliseconds) {
+        this.autoUpdateStopAfterMilliseconds = autoUpdateStopAfterMilliseconds;
+    }
+
+    private boolean canDeviceAccessLocation() {
+        return simpleLocation.hasLocationEnabled();
+    }
+
+    public boolean isRequireFineGranularity() {
+        return requireFineGranularity;
+    }
+
+    public boolean isPassiveMode() {
+        return passiveMode;
+    }
+
+    public long getUpdateIntervalInMilliseconds() {
+        return updateIntervalInMilliseconds;
+    }
+
+    public Coordinates getCoordinates() {
+        return coordinates;
+    }
+
+    private void setCoordinates(Coordinates coordinates) {
+        this.coordinates = coordinates;
+    }
+
+    public boolean isLocationReady() {
+        return locationReady;
+    }
+
+    public boolean isUpdatePaused() {
+        return updatePaused;
+    }
+
+    public boolean isEnoughRefineLocation() {
+        int refreshLeastTime = 2;
+        return timesRefresh > refreshLeastTime;
+    }
+
+}
+
+```
+> MainActivity.java
+
+```java
+
+public class MainActivity extends AppCompatActivity {
+
+    MyLocation myLocation;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        long interval = 1000 * 5;
+        myLocation = new MyLocation(getApplicationContext(), true, false, interval, true);
+        myLocation.setAutoUpdateStopAfterMilliseconds(interval * 10); // 25 Seconds after getting as precise coordinates as possible...
+        myLocation.startLocationUpdate(true);
+        
+        anyBtn.setOnClickListener(e -> {
+            if (myLocation.isLocationReady() && (myLocation.isEnoughRefineLocation() || myLocation.isUpdatePaused())) {
+                Log.d("XXX", "lat:" + myLocation.getCoordinates().getLat() + ", " + "lng:" + myLocation.getCoordinates().getLng());
+            } else {
+                showToast("Fetching Your Location");
+            }
+        });
+        
+    }
+    
+}
+
+```
