@@ -1814,3 +1814,112 @@ public class MainActivity extends AppCompatActivity {
    
 }
 ```
+## Retrofit Internet Boilerplate
+
+```gradle
+
+    implementation 'com.google.code.gson:gson:2.8.6'
+
+    /* Used for server calls */
+    implementation 'com.squareup.okio:okio:2.4.3'
+    implementation 'com.squareup.retrofit2:retrofit:2.7.1'
+    implementation 'com.facebook.stetho:stetho:1.5.1'
+    implementation 'com.facebook.stetho:stetho-okhttp3:1.5.1'
+
+    // https://stackoverflow.com/a/35238185
+    implementation 'com.squareup.retrofit2:adapter-rxjava2:2.7.1'
+    implementation 'com.squareup.retrofit2:converter-gson:2.7.1'
+
+    // Used to debug your Retrofit connections
+    // Do not upgrade as it will require increasing minSdkVersion to 21
+    //noinspection GradleDependency
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.3'
+
+```
+
+
+> RetrofitFactory.java
+
+```java
+
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import io.raisehand.raisehandrepositoryenv.utils.helperUtils.Constants;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
+
+public class RetrofitFactory {
+
+    public static Retrofit instance = null;
+
+    public static Retrofit getInstance() {
+        if (instance == null) {
+
+            Gson gson = new GsonBuilder().setLenient().create();
+
+            String BASE_URL = Constants.BACKEND_API_BASE_URL; // http://example.herokuapp.com/
+            instance = new Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create(gson))
+                    .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                    .build();
+        }
+
+        return instance;
+    }
+
+}
+
+```
+
+> BackendApiRoutes.java
+
+```java
+
+
+import io.raisehand.raisehandrepositoryenv.utils.helperUtils.Constants;
+import io.reactivex.Observable;
+import okhttp3.ResponseBody;
+import retrofit2.http.Field;
+import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.GET;
+import retrofit2.http.POST;
+import retrofit2.http.Path;
+
+public interface BackendApiRoutes {
+
+    @GET(Constants.ROUTE_VERSION + "/wake_up_server")
+    Observable<ResponseBody> wakeupServer();
+
+    @POST(Constants.ROUTE_VERSION + "/contributors/pricing")
+    @FormUrlEncoded
+    Observable<ResponseBody> getPlans(@Field("price_request_permission_code") String price_request_permission_code,                                                         @Field("currency_code") String currency_code, @Field("country") String country);
+
+    @POST(Constants.ROUTE_VERSION + "/{planName}")
+    @FormUrlEncoded
+    Observable<ResponseBody> makeChargePlan(@Path("planName") String planName, @Field("username") String username,                                                                 @Field("description") String description, @Field("customerId") String customerId,                                                     @Field("permissionCode") String permissionCode, @Field("currency_code") String                                                         currency_code);
+
+}
+
+```
+> MainActivity.java
+
+```java
+
+    private final BackendApiRoutes mBackendApiRoutes = RetrofitFactory.getInstance().create(BackendApiRoutes.class);
+    private final CompositeDisposable mCompositeDisposable = new CompositeDisposable();
+    
+    // inside onCreate
+    mCompositeDisposable.add(mBackendApiRoutes
+        .getPlans(
+                LocalDB.getAppConstants().getNODEJS_SERVER_PRICE_REQUEST_PERMISSION(),
+                HelperClass.getCurrencyCodeFromBaseCurrency(companyFirstChunk.getBaseCurrency()),
+                LocalDB.getSavedUser().getCountry())
+        .subscribeOn(Schedulers.io())
+        .observeOn(AndroidSchedulers.mainThread())
+        .subscribe(responseBody -> {}, , throwable -> showToast(throwable.getMessage())));
+        
+```
