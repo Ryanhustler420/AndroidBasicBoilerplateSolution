@@ -1,7 +1,7 @@
 # AndroidBasicBoilerplateSolution
 SpeedUp The Idea Development Process
 
-## Android Toolbar With Color Change BoilerPlater
+## Android Toolbar & Side Drawer With Color Change BoilerPlater
 
 > root/build.gradle
 
