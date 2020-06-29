@@ -1554,6 +1554,27 @@ public boolean onOptionsItemSelected(MenuItem item) {
     }
 }
 ```
+
+## Repeat Code Execution For X Times and Till y Seconds
+
+```java
+
+Timer timer = new Timer();
+int begin = 0;
+int timeInterval = 1000;
+timer.schedule(new TimerTask() {
+    int counter = 0;
+    public void run() {
+        counter++;
+        System.out.println("fuck");
+        if (counter >= 20) {
+            timer.cancel();
+        }
+    }
+}, begin, timeInterval);
+
+```
+
 ## Location (Coordinates) [From This Library](https://github.com/delight-im/Android-SimpleLocation)
 
 > MyLocation.java
