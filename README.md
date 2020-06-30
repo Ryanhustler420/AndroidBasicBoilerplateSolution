@@ -1559,19 +1559,34 @@ public boolean onOptionsItemSelected(MenuItem item) {
 
 ```java
 
-Timer timer = new Timer();
-int begin = 0;
-int timeInterval = 1000;
-timer.schedule(new TimerTask() {
-    int counter = 0;
-    public void run() {
-        counter++;
-        System.out.println("fuck");
-        if (counter >= 20) {
-            timer.cancel();
-        }
+public interface IAfterExecution {
+    void fire();
+}
+
+public static class Loop {
+    public static void run(IAfterExecution e, long interval, long times) {
+        Timer timer = new Timer();
+        int begin = 0;
+        long timeInterval = interval;
+        timer.schedule(new TimerTask() {
+            int counter = 0;
+
+            public void run() {
+                counter++;
+                e.fire();
+                if (counter >= times)
+                    timer.cancel();
+            }
+        }, begin, timeInterval);
     }
-}, begin, timeInterval);
+}
+
+
+public static void main(String[] args) {
+    Loop.run(() -> {
+        System.out.println("Fuck");
+    }, 3000, 10);
+}
 
 ```
 
