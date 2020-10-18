@@ -1959,3 +1959,60 @@ public interface BackendApiRoutes {
         .subscribe(responseBody -> {}, , throwable -> showToast(throwable.getMessage())));
         
 ```
+## UniqueDeviceIdentifier
+
+``This is safe way to get unique value on every device like IMEI, but IMEI is not safe to use, so use this code``
+
+> UniqueDeviceID.java
+
+```java
+
+package com.eajy.materialdesigndemo.util;
+
+import android.media.MediaDrm;
+import android.os.Build;
+
+import java.security.MessageDigest;
+import java.util.*;
+
+// [STACK_OVERFLOW] https://stackoverflow.com/a/59050182/8703198
+public class UniqueDeviceID {
+    /**
+     * UUID for the Widevine DRM scheme.
+     * <p>
+     * Widevine is supported on Android devices running Android 4.3 (API Level 18) and up.
+     */
+
+    public String getUniqueId() {
+        UUID WIDEVINE_UUID = new UUID(-0x121074568629b532L, -0x5c37d8232ae2de13L);
+        MediaDrm wvDrm = null;
+        try {
+            wvDrm = new MediaDrm(WIDEVINE_UUID);
+            byte[] widevineId = wvDrm.getPropertyByteArray(MediaDrm.PROPERTY_DEVICE_UNIQUE_ID);
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(widevineId);
+            StringBuilder sb = new StringBuilder();
+            for (byte b : md.digest()) {
+                sb.append(String.format("%02X", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            //WIDEVINE is not available
+            return null;
+        } finally {
+            if (isAndroidTargetPieAndHigher()) {
+                if (wvDrm != null) wvDrm.close();
+            } else {
+                if (wvDrm != null) wvDrm.release();
+            }
+        }
+    }
+
+    private boolean isAndroidTargetPieAndHigher() {
+        return android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.P;
+    }
+
+}
+
+
+```
