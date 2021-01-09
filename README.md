@@ -2016,3 +2016,121 @@ public class UniqueDeviceID {
 
 
 ```
+
+## Camera Module (Old + New)
+
+``CameraX made all super simple, go with that``
+
+> CameraModule.java
+
+```java
+
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.hardware.Camera;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.os.Build;
+
+import androidx.core.app.ActivityCompat;
+
+import org.jetbrains.annotations.NotNull;
+
+public class CameraModule {
+    private Context context;
+
+    public CameraModule(Context ctx) {
+        context = ctx;
+    }
+
+    public CameraSupport provideCameraSupport() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            return new CameraNew(context);
+        } else {
+            return new CameraOld();
+        }
+    }
+
+
+    public class CameraNew implements CameraSupport {
+
+        private CameraDevice camera;
+        private CameraManager manager;
+
+        public CameraNew(final Context context) {
+            this.manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+        }
+
+        @Override
+        public CameraSupport open(final int cameraId) {
+            try {
+                String[] cameraIds = manager.getCameraIdList();
+                if (ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                    manager.openCamera(cameraIds[cameraId], new CameraDevice.StateCallback() {
+                        @Override
+                        public void onOpened(@NotNull CameraDevice camera) {
+                            CameraNew.this.camera = camera;
+                        }
+
+                        @Override
+                        public void onDisconnected(@NotNull CameraDevice camera) {
+                            CameraNew.this.camera = camera;
+                            // TODO handle
+                        }
+
+                        @Override
+                        public void onError(@NotNull CameraDevice camera, int error) {
+                            CameraNew.this.camera = camera;
+                            // TODO handle
+                        }
+                    }, null);
+                }
+            } catch (Exception ignored) {
+
+            }
+            return this;
+        }
+
+        @Override
+        public int getOrientation(final int cameraId) {
+            try {
+                String[] cameraIds = manager.getCameraIdList();
+                CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraIds[cameraId]);
+                return characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+            } catch (CameraAccessException e) {
+                return 0;
+            }
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    public class CameraOld implements CameraSupport {
+
+        private Camera camera;
+
+        @Override
+        public CameraSupport open(final int cameraId) {
+            this.camera = Camera.open(cameraId);
+            return this;
+        }
+
+        @Override
+        public int getOrientation(final int cameraId) {
+            Camera.CameraInfo info = new Camera.CameraInfo();
+            Camera.getCameraInfo(cameraId, info);
+            return info.orientation;
+        }
+    }
+
+    public interface CameraSupport {
+        CameraSupport open(int cameraId);
+
+        int getOrientation(int cameraId);
+    }
+
+}
+
+```
